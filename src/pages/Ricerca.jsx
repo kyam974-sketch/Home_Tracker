@@ -239,6 +239,14 @@ export default function Ricerca() {
                           Match {match.punteggio_match}%
                         </span>
                       )}
+                      {analysis?.sicurezza_zona && (
+                        <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium" style={{
+                          background: analysis.sicurezza_zona === 'tranquilla' ? '#E7F7EF' : analysis.sicurezza_zona === 'attenzione' ? '#FCE9EA' : '#FBF1DD',
+                          color: analysis.sicurezza_zona === 'tranquilla' ? '#2E9E64' : analysis.sicurezza_zona === 'attenzione' ? '#D1454D' : '#C98A1F',
+                        }}>
+                          Zona {analysis.sicurezza_zona === 'tranquilla' ? 'tranquilla' : analysis.sicurezza_zona === 'attenzione' ? 'da valutare' : 'da verificare'}
+                        </span>
+                      )}
                       {!analysis && (
                         <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium" style={{ background: '#FAF7F0', color: '#B5B2BC' }}>
                           Analisi in corso…
@@ -301,6 +309,29 @@ export default function Ricerca() {
                     <div>
                       <p className="text-[11px] uppercase font-mono font-semibold mb-1" style={{ color: '#9A97A3' }}>Perché questo giudizio di credibilità</p>
                       <p>{analysis.motivi_credibilita}</p>
+                    </div>
+                  )}
+                  {analysis?.analisi_zona && (
+                    <div>
+                      <p className="text-[11px] uppercase font-mono font-semibold mb-1" style={{ color: '#9A97A3' }}>
+                        Zona
+                        {analysis.sicurezza_zona && (
+                          <span className="ml-2 normal-case font-sans font-medium px-2 py-0.5 rounded-full text-[11px]" style={{
+                            background: analysis.sicurezza_zona === 'tranquilla' ? '#E7F7EF' : analysis.sicurezza_zona === 'attenzione' ? '#FCE9EA' : '#FBF1DD',
+                            color: analysis.sicurezza_zona === 'tranquilla' ? '#2E9E64' : analysis.sicurezza_zona === 'attenzione' ? '#D1454D' : '#C98A1F',
+                          }}>
+                            {analysis.sicurezza_zona === 'tranquilla' ? 'Tranquilla' : analysis.sicurezza_zona === 'attenzione' ? 'Da valutare con attenzione' : 'Da verificare'}
+                          </span>
+                        )}
+                      </p>
+                      <p>{analysis.analisi_zona}</p>
+                      <p className="text-[11px] italic mt-1" style={{ color: '#B5B2BC' }}>Valutazione indicativa basata su conoscenza generale, non un dato ufficiale.</p>
+                    </div>
+                  )}
+                  {analysis?.distanza_mezzi && (
+                    <div>
+                      <p className="text-[11px] uppercase font-mono font-semibold mb-1" style={{ color: '#9A97A3' }}>Mezzi pubblici nelle vicinanze</p>
+                      <p>{analysis.distanza_mezzi}</p>
                     </div>
                   )}
                   {match?.dettagli_match?.note && (
