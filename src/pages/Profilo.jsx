@@ -23,6 +23,7 @@ export default function Profilo({ session }) {
     piano_min: '',
     zone_preferite: '',
     altri_requisiti: '',
+    numero_persone: 1,
   });
   const [status, setStatus] = useState('idle'); // idle | saving | saved
 
@@ -59,6 +60,7 @@ export default function Profilo({ session }) {
         ? needs.zone_preferite.split(',').map((z) => z.trim()).filter(Boolean)
         : [],
       altri_requisiti: needs.altri_requisiti,
+      numero_persone: needs.numero_persone ? Number(needs.numero_persone) : 1,
       aggiornato_il: new Date().toISOString(),
     };
     await supabase.from('housing_needs').upsert(payload, { onConflict: 'profile_id' });
@@ -129,6 +131,17 @@ export default function Profilo({ session }) {
                 type="number"
                 value={needs.piano_min || ''}
                 onChange={(e) => setNeeds({ ...needs, piano_min: e.target.value })}
+                className="px-3 py-2 rounded-xl outline-none"
+                style={{ border: '1px solid #F0EDE6', background: '#FAF7F0' }}
+              />
+            </label>
+            <label className="flex flex-col gap-1" style={{ color: '#4A4852' }}>
+              Numero di persone che cercano insieme
+              <input
+                type="number"
+                min={1}
+                value={needs.numero_persone || 1}
+                onChange={(e) => setNeeds({ ...needs, numero_persone: e.target.value })}
                 className="px-3 py-2 rounded-xl outline-none"
                 style={{ border: '1px solid #F0EDE6', background: '#FAF7F0' }}
               />
