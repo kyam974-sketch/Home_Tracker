@@ -31,6 +31,7 @@ function CredBadge({ level }) {
 export default function Ricerca() {
   const [listings, setListings] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
   const [form, setForm] = useState({ titolo: '', prezzo: '', tipo_soggetto: 'privato', zona: '', testo_completo: '', url_originale: '' });
   const [saving, setSaving] = useState(false);
 
@@ -142,7 +143,10 @@ export default function Ricerca() {
           const match = Array.isArray(l.listing_match) ? l.listing_match[0] : l.listing_match;
           return (
             <Card key={l.id}>
-              <div className="flex items-start justify-between gap-6">
+              <div
+                className="flex items-start justify-between gap-6 cursor-pointer"
+                onClick={() => setExpandedId(expandedId === l.id ? null : l.id)}
+              >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1.5">
                     <h3 className="text-[15px] font-semibold">{l.titolo}</h3>
@@ -164,6 +168,11 @@ export default function Ricerca() {
                           Match {match.punteggio_match}%
                         </span>
                       )}
+                      {!analysis && (
+                        <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium" style={{ background: '#FAF7F0', color: '#B5B2BC' }}>
+                          Analisi in corso…
+                        </span>
+                      )}
                     </div>
                   )}
                   {analysis?.flag_sospetti?.length > 0 && (
@@ -181,6 +190,35 @@ export default function Ricerca() {
                   </div>
                 </div>
               </div>
+
+              {expandedId === l.id && (
+                <div className="mt-4 pt-4 space-y-3 text-[13px]" style={{ borderTop: '1px solid #F0EDE6', color: '#4A4852' }}>
+                  {l.testo_completo && (
+                    <div>
+                      <p className="text-[11px] uppercase font-mono font-semibold mb-1" style={{ color: '#9A97A3' }}>Testo annuncio</p>
+                      <p>{l.testo_completo}</p>
+                    </div>
+                  )}
+                  {l.url_originale && (
+                    <div>
+                      <p className="text-[11px] uppercase font-mono font-semibold mb-1" style={{ color: '#9A97A3' }}>Link</p>
+                      <a href={l.url_originale} target="_blank" rel="noreferrer" className="underline break-all" style={{ color: '#4B8BF2' }}>{l.url_originale}</a>
+                    </div>
+                  )}
+                  {analysis?.motivi_credibilita && (
+                    <div>
+                      <p className="text-[11px] uppercase font-mono font-semibold mb-1" style={{ color: '#9A97A3' }}>Perché questo giudizio di credibilità</p>
+                      <p>{analysis.motivi_credibilita}</p>
+                    </div>
+                  )}
+                  {match?.dettagli_match?.note && (
+                    <div>
+                      <p className="text-[11px] uppercase font-mono font-semibold mb-1" style={{ color: '#9A97A3' }}>Dettagli del match</p>
+                      <p>{match.dettagli_match.note}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </Card>
           );
         })}
