@@ -35,11 +35,13 @@ export default function Ricerca() {
   const [saving, setSaving] = useState(false);
 
   async function loadListings() {
+    const { data: userData } = await supabase.auth.getUser();
     const { data } = await supabase
       .from('listings')
-      .select('*, listing_analysis(*)')
+      .select('*, listing_analysis(*), listing_match(*)')
       .order('data_trovato', { ascending: false })
       .limit(50);
+    // listing_match contiene i match di tutti i profili (per via delle RLS solo il proprio arriva comunque)
     setListings(data || []);
   }
 
@@ -51,16 +53,31 @@ export default function Ricerca() {
     e.preventDefault();
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
-    await supabase.from('listings').insert({
-      fonte: 'manuale',
-      titolo: form.titolo,
-      prezzo: form.prezzo ? Number(form.prezzo) : null,
-      tipo_soggetto: form.tipo_soggetto,
-      zona: form.zona,
-      testo_completo: form.testo_completo,
-      url_originale: form.url_originale,
-      inserito_da: userData?.user?.id,
-    });
+    const { data: inserted, error } = await supabase
+      .from('listings')
+      .insert({
+        fonte: 'manuale',
+        titolo: form.titolo,
+        prezzo: form.prezzo ? Number(form.prezzo) : null,
+        tipo_soggetto: form.tipo_soggetto,
+        zona: form.zona,
+        testo_completo: form.testo_completo,
+        url_originale: form.url_originale,
+        inserito_da: userData?.user?.id,
+      })
+      .select()
+      .single();
+
+    if (!error && inserted) {
+      // Avvia l'analisi AI (credibilità + match) in background, non blocca il salvataggio
+      supabase.functions
+        .invoke('analyze-listing', {
+          body: { listing_id: inserted.id, profile_id: userData?.user?.id },
+        })
+        .then(() => loadListings())
+        .catch(() => {});
+    }
+
     setSaving(false);
     setShowForm(false);
     setForm({ titolo: '', prezzo: '', tipo_soggetto: 'privato', zona: '', testo_completo: '', url_originale: '' });
@@ -122,6 +139,7 @@ export default function Ricerca() {
         )}
         {listings.map((l) => {
           const analysis = Array.isArray(l.listing_analysis) ? l.listing_analysis[0] : l.listing_analysis;
+          const match = Array.isArray(l.listing_match) ? l.listing_match[0] : l.listing_match;
           return (
             <Card key={l.id}>
               <div className="flex items-start justify-between gap-6">
@@ -138,9 +156,23 @@ export default function Ricerca() {
                       {l.prezzo}€<span className="text-[12px] font-normal" style={{ color: '#B5B2BC' }}> /mese</span>
                     </p>
                   )}
-                  {analysis && (
+                  {(analysis || match) && (
                     <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <CredBadge level={analysis.punteggio_credibilita} />
+                      {analysis && <CredBadge level={analysis.punteggio_credibilita} />}
+                      {match && typeof match.punteggio_match === 'number' && (
+                        <span className="text-[11px] px-2.5 py-0.5 rounded-full font-mono font-medium" style={{ background: '#F4F2FC', color: '#8B5CF2' }}>
+                          Match {match.punteggio_match}%
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {analysis?.flag_sospetti?.length > 0 && (
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                      {analysis.flag_sospetti.map((f) => (
+                        <span key={f} className="text-[11px] px-2.5 py-0.5 rounded-full font-medium" style={{ background: '#FCE9EA', color: '#D1454D' }}>
+                          ⚠ {f}
+                        </span>
+                      ))}
                     </div>
                   )}
                   <div className="flex items-center gap-2 text-[12px]" style={{ color: '#9A97A3' }}>
