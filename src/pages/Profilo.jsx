@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { Mail } from 'lucide-react';
+import { Mail, RefreshCw } from 'lucide-react';
 
 function Card({ children }) {
   return (
@@ -26,6 +26,8 @@ export default function Profilo({ session }) {
     numero_persone: 1,
   });
   const [status, setStatus] = useState('idle'); // idle | saving | saved
+  const [emailStatus, setEmailStatus] = useState('idle'); // idle | checking | done | error
+  const [emailResult, setEmailResult] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -66,6 +68,22 @@ export default function Profilo({ session }) {
     await supabase.from('housing_needs').upsert(payload, { onConflict: 'profile_id' });
     setStatus('saved');
     setTimeout(() => setStatus('idle'), 1500);
+  }
+
+  async function handleCheckEmail() {
+    setEmailStatus('checking');
+    setEmailResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('check-email', {
+        body: { profile_id: session.user.id },
+      });
+      if (error) throw error;
+      setEmailResult(data);
+      setEmailStatus('done');
+    } catch (err) {
+      setEmailResult({ error: err.message || 'Errore durante il controllo' });
+      setEmailStatus('error');
+    }
   }
 
   return (
@@ -189,12 +207,34 @@ export default function Profilo({ session }) {
         <Card>
           <div className="flex items-center justify-between">
             <p className="text-[12px] uppercase tracking-wide font-semibold font-mono" style={{ color: '#9A97A3' }}>Collegamento email</p>
-            <span className="text-[11px] px-2.5 py-1 rounded-full font-medium" style={{ background: '#FBF1DD', color: '#C98A1F' }}>Non ancora connessa</span>
+            <span className="text-[11px] px-2.5 py-1 rounded-full font-medium" style={{ background: '#E7F7EF', color: '#2E9E64' }}>Connessa</span>
           </div>
           <div className="flex items-center gap-2 mt-3 text-[13px]" style={{ color: '#4A4852' }}>
             <Mail size={14} style={{ color: '#4B8BF2' }} />
-            Il collegamento email arriverà in un prossimo step
+            Inoltra gli annunci ricevuti a hometracker.annunci@gmail.com
           </div>
+          <button
+            type="button"
+            onClick={handleCheckEmail}
+            disabled={emailStatus === 'checking'}
+            className="mt-3 px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2"
+            style={{ background: '#FAF7F0', color: '#2B2A33', border: '1px solid #F0EDE6' }}
+          >
+            <RefreshCw size={14} className={emailStatus === 'checking' ? 'animate-spin' : ''} />
+            {emailStatus === 'checking' ? 'Controllo in corso…' : 'Controlla nuove email'}
+          </button>
+          {emailStatus === 'done' && emailResult && (
+            <p className="mt-2 text-[12px]" style={{ color: '#2E9E64' }}>
+              {emailResult.trovate === 0
+                ? 'Nessuna nuova email da importare.'
+                : `Trovate ${emailResult.trovate} email, importati ${emailResult.importate} nuovi annunci.`}
+            </p>
+          )}
+          {emailStatus === 'error' && emailResult && (
+            <p className="mt-2 text-[12px]" style={{ color: '#D1454D' }}>
+              Errore: {emailResult.error}
+            </p>
+          )}
         </Card>
 
         <button
