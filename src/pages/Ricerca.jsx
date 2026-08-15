@@ -132,16 +132,23 @@ export default function Ricerca() {
 
   async function handleContatta(listingId) {
     const { data: userData } = await supabase.auth.getUser();
-    await supabase.from('pipeline').upsert(
-      {
-        profile_id: userData?.user?.id,
-        listing_id: listingId,
-        contattato: true,
-        data_contatto: new Date().toISOString().slice(0, 10),
-        esito: 'In attesa',
-      },
-      { onConflict: 'profile_id,listing_id', ignoreDuplicates: true }
-    );
+    const alreadyIn = pipelineIds.has(listingId);
+
+    if (alreadyIn) {
+      // Toglie dalla pipeline (rimuove la candidatura)
+      await supabase.from('pipeline').delete().eq('profile_id', userData?.user?.id).eq('listing_id', listingId);
+    } else {
+      await supabase.from('pipeline').upsert(
+        {
+          profile_id: userData?.user?.id,
+          listing_id: listingId,
+          contattato: true,
+          data_contatto: new Date().toISOString().slice(0, 10),
+          esito: 'In attesa',
+        },
+        { onConflict: 'profile_id,listing_id' }
+      );
+    }
     loadListings();
   }
 
@@ -257,8 +264,7 @@ export default function Ricerca() {
                 <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleContatta(l.id)}
-                    disabled={inPipeline}
-                    title={inPipeline ? 'Già in Dashboard' : 'Segna come contattato'}
+                    title={inPipeline ? 'Rimuovi da Dashboard' : 'Segna come contattato'}
                     className="p-2 rounded-full"
                     style={{ background: inPipeline ? '#E7F7EF' : '#F4F2FC', color: inPipeline ? '#2E9E64' : '#8B5CF2' }}
                   >
