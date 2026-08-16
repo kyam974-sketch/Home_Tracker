@@ -5,7 +5,8 @@ import Auth from './pages/Auth';
 import Profilo from './pages/Profilo';
 import Ricerca from './pages/Ricerca';
 import Dashboard from './pages/Dashboard';
-import { Home, User, LayoutGrid, KeyRound, LogOut } from 'lucide-react';
+import Calendario from './pages/Calendario';
+import { Home, User, LayoutGrid, KeyRound, LogOut, Calendar } from 'lucide-react';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -30,6 +31,7 @@ export default function App() {
     { key: 'profilo', label: 'Profilo', icon: User },
     { key: 'ricerca', label: 'Ricerca annunci', icon: KeyRound },
     { key: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
+    { key: 'calendario', label: 'Calendario', icon: Calendar },
   ];
 
   return (
@@ -80,6 +82,7 @@ export default function App() {
         {tab === 'profilo' && <Profilo session={session} />}
         {tab === 'ricerca' && <Ricerca />}
         {tab === 'dashboard' && <Dashboard session={session} />}
+        {tab === 'calendario' && <Calendario session={session} />}
       </main>
     </div>
   );
